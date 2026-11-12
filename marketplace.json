@@ -1,0 +1,23 @@
+{
+  "name": "pstack",
+  "owner": {
+    "name": "pstack-ports"
+  },
+  "metadata": {
+    "description": "Qoder port of pstack by Lauren Tan (poteto)."
+  },
+  "plugins": [
+    {
+      "name": "pstack",
+      "source": "./",
+      "description": "if you want to go fast, go deep first. pstack helps you write less, but higher quality code. rigorous agent workflows you can parallelize with confidence.",
+      "category": "developer-tools",
+      "tags": [
+        "workflow",
+        "principles",
+        "review",
+        "planning"
+      ]
+    }
+  ]
+}

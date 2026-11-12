@@ -20,7 +20,7 @@ ${rule}
 ### PR mechanics
 ### Verdict and merge
 ### Boot recipe
-\`git show origin/main:\` /loop 1h status message
+\`~/.qoder/plugins/\` /loop 1h status message
 
 ## PR 1
 **Depends on.** None.
@@ -107,4 +107,19 @@ test("checks prose following a multi-backtick span and unmatched delimiters", ()
 	expect(outside.stderr).toContain("mid-sentence colon");
 	const unmatched = runPlan("Use ``unclosed: bad` here.\n", 1);
 	expect(unmatched.stderr).toContain("mid-sentence colon");
+});
+
+test("accepts a resolved Qoder plugin path in Program checklist", () => {
+	const directory = mkdtempSync(join(tmpdir(), "check-plan-test-"));
+	const file = join(directory, "plan.md");
+	writeFileSync(
+		file,
+		validPlan.replace("`~/.qoder/plugins/`", "`~/.qoder/plugins/cache/pstack/skills/swarm/SKILL.md`"),
+	);
+	try {
+		const result = spawnSync("node", [checker, file], { encoding: "utf8" });
+		expect(result.status).toBe(0);
+	} finally {
+		rmSync(directory, { recursive: true, force: true });
+	}
 });
