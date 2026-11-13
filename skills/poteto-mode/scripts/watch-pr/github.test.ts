@@ -295,6 +295,58 @@ it("annotates Bugbot threads with distinct review-pass counts", () => {
   expect(threads.map((thread) => thread.bugbotReviewPasses)).toEqual([3, 3]);
 });
 
+describe("host-agnostic Bugbot detection", () => {
+  const page = (comments: { login: string; body: string }[]) => ({
+    data: {
+      repository: {
+        pullRequest: {
+          reviewThreads: {
+            pageInfo: { hasNextPage: false, endCursor: null },
+            nodes: comments.map((comment, index) => ({
+              id: `thread-${index}`,
+              isResolved: false,
+              comments: {
+                nodes: [
+                  {
+                    body: comment.body,
+                    createdAt: "now",
+                    path: null,
+                    line: null,
+                    author: { login: comment.login },
+                  },
+                ],
+              },
+            })),
+          },
+        },
+      },
+    },
+  });
+
+  it("flags a non-bugbot author by the automation marker and counts distinct host passes", () => {
+    const threads = buildReviewThreads(
+      parseReviewThreadPage(
+        page([
+          { login: "qoder-bot", body: "QODER_AUTOMATION_ID: run-9 severity high" },
+          { login: "qoder-bot", body: "QODER_AUTOMATION_ID: run-10 severity high" },
+        ])
+      ).threads
+    );
+    expect(threads.map((thread) => thread.isBugbot)).toEqual([true, true]);
+    expect(threads.map((thread) => thread.bugbotReviewPasses)).toEqual([2, 2]);
+  });
+
+  it("does not flag a human comment that only mentions severity", () => {
+    const threads = buildReviewThreads(
+      parseReviewThreadPage(
+        page([{ login: "someone", body: "severity high, please fix" }])
+      ).threads
+    );
+    expect(threads.map((thread) => thread.isBugbot)).toEqual([false]);
+    expect(threads.map((thread) => thread.bugbotReviewPasses)).toEqual([0]);
+  });
+});
+
 describe("review thread pagination", () => {
   const thread = (id: string, resolved = false) => ({
     id,
