@@ -1,0 +1,288 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+  schedule:
+    - cron: "0 0 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  invariants:
+    name: Invariants
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Check invariants
+        run: |
+          node --input-type=module <<'EOF'
+          import { readdirSync, readFileSync, statSync } from "node:fs";
+          import { join, basename } from "node:path";
+
+          const errors = [];
+          const fail = (msg) => errors.push(msg);
+
+          const modelInvocable = ["control-cli", "control-ui", "deslop", "setup-pstack"];
+
+          const cursorToolNames = [
+            "TodoWrite",
+            "StrReplace",
+            "EditNotebook",
+            "CallMcpTool",
+            "GetMcpTools",
+            "FetchMcpResource",
+            "AwaitShell",
+            "SwitchMode",
+            "ReadLints",
+            "GenerateImage",
+          ];
+          const cursorToolRe = new RegExp(`\\b(?:${cursorToolNames.join("|")})\\b`);
+          const taskToolRe = /`Task`(?![A-Za-z])/;
+
+          function walk(dir, acc = []) {
+            for (const ent of readdirSync(dir, { withFileTypes: true })) {
+              if (ent.name === "node_modules" || ent.name === ".git") continue;
+              const p = join(dir, ent.name);
+              if (ent.isDirectory()) walk(p, acc);
+              else acc.push(p);
+            }
+            return acc;
+          }
+
+          function frontmatter(text) {
+            const m = text.match(/^---\r?\n([\s\S]*?)\r?\n---(?:\r?\n|$)/);
+            return m ? m[1] : null;
+          }
+
+          const skillDirs = readdirSync("skills", { withFileTypes: true })
+            .filter((d) => d.isDirectory())
+            .map((d) => d.name)
+            .sort();
+          const invocable = [];
+          for (const dir of skillDirs) {
+            const skillFile = join("skills", dir, "SKILL.md");
+            let text;
+            try {
+              text = readFileSync(skillFile, "utf8");
+            } catch {
+              fail(`${skillFile}: missing SKILL.md`);
+              continue;
+            }
+            const fm = frontmatter(text);
+            if (!fm) {
+              fail(`${skillFile}: missing YAML frontmatter`);
+              continue;
+            }
+            const disabled = /^disable-model-invocation:\s*true\s*$/m.test(fm);
+            if (disabled) {
+              if (modelInvocable.includes(dir)) {
+                fail(`${skillFile}: model-invocable skill sets disable-model-invocation: true`);
+              }
+            } else {
+              invocable.push(dir);
+            }
+          }
+          invocable.sort();
+          const expectedInvocable = [...modelInvocable].sort();
+          if (JSON.stringify(invocable) !== JSON.stringify(expectedInvocable)) {
+            fail(
+              `model-invocable skills: expected ${JSON.stringify(expectedInvocable)}, got ${JSON.stringify(invocable)}`,
+            );
+          }
+
+          const scanFiles = [];
+          for (const root of ["skills", "agents", "docs", "automations"]) {
+            if (statSync(root).isDirectory()) walk(root, scanFiles);
+          }
+          scanFiles.push("README.md");
+
+          for (const file of scanFiles) {
+            const text = readFileSync(file, "utf8");
+            if (text.includes("cursor-agent")) fail(`${file}: cursor-agent CLI reference`);
+            const toolHit = text.match(cursorToolRe);
+            if (toolHit) fail(`${file}: Cursor tool name "${toolHit[0]}"`);
+            if (taskToolRe.test(text)) fail(`${file}: Cursor tool name "Task"`);
+          }
+
+          const pluginAgents = readdirSync("agents")
+            .filter((f) => f.endsWith(".md"))
+            .map((f) => `pstack:${basename(f, ".md")}`);
+          const builtins = new Set([
+            "Explore",
+            "general-purpose",
+            "Plan",
+            "qoder-guide",
+            "statusline-setup",
+          ]);
+          const profileRe = /^pstack-.+-(?:low|medium|high|xhigh|max)(?:-ro)?$/;
+          const registered = (name) =>
+            pluginAgents.includes(name) || builtins.has(name) || profileRe.test(name);
+
+          const typeRe = /subagent_type:\s*["']([^"']+)["']/g;
+          const seen = new Set();
+          for (const file of scanFiles) {
+            const text = readFileSync(file, "utf8");
+            for (const match of text.matchAll(typeRe)) {
+              const name = match[1];
+              seen.add(`${file}: ${name}`);
+              if (!registered(name)) {
+                fail(`${file}: subagent_type "${name}" is not a registered agent`);
+              }
+            }
+          }
+          if (seen.size === 0) fail("no subagent_type references found");
+
+          if (errors.length > 0) {
+            for (const err of errors) console.error(`ERROR: ${err}`);
+            process.exit(1);
+          }
+          console.log(
+            `Checked ${skillDirs.length} skills (${invocable.length} model-invocable), ${pluginAgents.length} agents, ${seen.size} subagent_type references.`,
+          );
+          EOF
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+
+      - name: Check shell scripts
+        run: |
+          bash -n skills/poteto-mode/scripts/worktree-audit.sh
+          bash -n skills/show-me-your-work/scripts/log.sh
+
+      - name: Install script dependencies
+        working-directory: skills/poteto-mode/scripts
+        run: bun install --frozen-lockfile
+
+      - name: Typecheck scripts
+        working-directory: skills/poteto-mode/scripts
+        run: bun run typecheck
+
+      - name: Run script tests
+        working-directory: skills/poteto-mode/scripts
+        env:
+          GIT_CONFIG_COUNT: "1"
+          GIT_CONFIG_KEY_0: commit.gpgsign
+          GIT_CONFIG_VALUE_0: "false"
+        run: bun run test
+
+      - name: Test statechart
+        working-directory: skills/statechart/scripts
+        run: |
+          bun install
+          bun run test
+
+  qodercli:
+    name: qodercli
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Install qodercli
+        run: npm install -g @qoder-ai/qodercli
+
+      - name: Verify qodercli version
+        run: qodercli --version
+
+      - name: Install plugin from the checkout
+        run: |
+          set -euo pipefail
+          cfg="$(mktemp -d)"
+          root="$GITHUB_WORKSPACE"
+          qodercli --config-dir "$cfg" plugins validate --strict "$root"
+          qodercli --config-dir "$cfg" plugins marketplace add "$root"
+          qodercli --config-dir "$cfg" plugins install "$root"
+          qodercli --config-dir "$cfg" plugins list --json > "$cfg/plugins.json"
+          qodercli --config-dir "$cfg" skills list > "$cfg/skills.txt"
+          QODER_PLUGINS_JSON="$cfg/plugins.json" QODER_SKILLS_TXT="$cfg/skills.txt" node --input-type=module <<'EOF'
+          import { readdirSync, readFileSync } from "node:fs";
+          import { basename } from "node:path";
+
+          const errors = [];
+          const fail = (msg) => errors.push(msg);
+          const bare = (name) => String(name).replace(/^pstack:/, "");
+
+          const pluginJson = JSON.parse(readFileSync(".qoder-plugin/plugin.json", "utf8"));
+          const installedList = JSON.parse(readFileSync(process.env.QODER_PLUGINS_JSON, "utf8"));
+          const installed = installedList.find((p) => p.name === pluginJson.name);
+          if (!installed) {
+            fail(`plugins list did not include "${pluginJson.name}"`);
+          } else {
+            if (!installed.enabled) fail(`installed plugin "${pluginJson.name}" is not enabled`);
+            if (installed.version !== pluginJson.version) {
+              fail(`installed version "${installed.version}" !== "${pluginJson.version}"`);
+            }
+
+            const diskSkills = readdirSync("skills", { withFileTypes: true })
+              .filter((d) => d.isDirectory())
+              .map((d) => d.name)
+              .sort();
+            const loadedSkills = (installed.resources?.skills ?? []).map((s) => bare(s.name)).sort();
+            if (JSON.stringify(loadedSkills) !== JSON.stringify(diskSkills)) {
+              const missing = diskSkills.filter((s) => !loadedSkills.includes(s));
+              const extra = loadedSkills.filter((s) => !diskSkills.includes(s));
+              fail(
+                `loaded skills mismatch: expected ${diskSkills.length}, got ${loadedSkills.length}, missing ${JSON.stringify(missing)}, extra ${JSON.stringify(extra)}`,
+              );
+            }
+
+            const diskAgents = readdirSync("agents")
+              .filter((f) => f.endsWith(".md"))
+              .map((f) => `pstack:${basename(f, ".md")}`)
+              .sort();
+            const loadedAgents = (installed.resources?.agents ?? [])
+              .map((a) => {
+                const name = String(a.name);
+                return name.includes(":") ? name : `pstack:${name}`;
+              })
+              .sort();
+            if (JSON.stringify(loadedAgents) !== JSON.stringify(diskAgents)) {
+              fail(`loaded agents mismatch: expected ${JSON.stringify(diskAgents)}, got ${JSON.stringify(loadedAgents)}`);
+            }
+
+            const skillsText = readFileSync(process.env.QODER_SKILLS_TXT, "utf8");
+            for (const skill of ["poteto-mode", "setup-pstack", "deslop", "control-cli", "control-ui"]) {
+              if (!loadedSkills.includes(skill)) fail(`plugins list missing skill "${skill}"`);
+              if (!skillsText.includes(`pstack:${skill}`)) fail(`skills list missing "pstack:${skill}"`);
+            }
+            for (const agent of diskAgents) {
+              if (!loadedAgents.includes(agent)) fail(`plugins list missing agent "${agent}"`);
+            }
+          }
+
+          if (errors.length > 0) {
+            for (const err of errors) console.error(`ERROR: ${err}`);
+            process.exit(1);
+          }
+          const installedOk = installedList.find((p) => p.name === pluginJson.name);
+          console.log(
+            `qodercli loaded ${installedOk.resources.skills.length} skills and ${installedOk.resources.agents.length} agents from ${installedOk.id} ${installedOk.version}.`,
+          );
+          EOF

@@ -6,7 +6,7 @@ pstack 0.15.36 runs on Qoder. The core poteto-mode workflow is compatible. This 
 
 - The manifest `.qoder-plugin/plugin.json` and `marketplace.json` use the Qoder plugin format.
 - Both agents, `poteto-agent` and `comment-sicko`, register and appear in the Agent tool list.
-- The plugin ships 63 skills. Four are model-invocable: `control-cli`, `control-ui`, `deslop`, and `setup-pstack`. The other 59 set `disable-model-invocation: true`, so Qoder hides them from model invocation but keeps them slash-invocable and file-routable.
+- The plugin ships 61 skills. Four are model-invocable: `control-cli`, `control-ui`, `deslop`, and `setup-pstack`. The other 57 set `disable-model-invocation: true`, so Qoder hides them from model invocation but keeps them slash-invocable and file-routable.
 - The skills use Qoder tool names such as `Agent`, `TaskCreate`, and `Skill`. No Cursor tool name or `cursor-agent` CLI reference remains.
 - The default models `Fast` and `Ultimate` are valid names in `qodercli --list-models`.
 - Every `subagent_type` reference points to a registered agent.
