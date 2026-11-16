@@ -1,6 +1,6 @@
 # Qoder compatibility
 
-pstack 0.15.36 runs on Qoder. The core poteto-mode workflow is compatible. This file records what is verified, what needs setup, and what is out of scope.
+pstack 0.15.42 runs on Qoder. The core poteto-mode workflow is compatible. This file records what is verified, what needs setup, and what is out of scope.
 
 ## Verified compatible
 
@@ -8,7 +8,7 @@ pstack 0.15.36 runs on Qoder. The core poteto-mode workflow is compatible. This 
 - Both agents, `poteto-agent` and `comment-sicko`, register and appear in the Agent tool list.
 - The plugin ships 61 skills. Four are model-invocable: `control-cli`, `control-ui`, `deslop`, and `setup-pstack`. The other 57 set `disable-model-invocation: true`, so Qoder hides them from model invocation but keeps them slash-invocable and file-routable.
 - The skills use Qoder tool names such as `Agent`, `TaskCreate`, and `Skill`. No Cursor tool name or `cursor-agent` CLI reference remains.
-- The default models `Fast` and `Ultimate` are valid names in `qodercli --list-models`.
+- The default models `Fast` and `Ultimate` are valid names in `qodercli --list-models`. Code, prose, and judgment default to `Ultimate xhigh`. The hardest tasks default to `Ultimate max`. Reflect tooling and swarm workers default to `Ultimate high`. Review panels default to `Ultimate high` and `Fast high`.
 - Every `subagent_type` reference points to a registered agent.
 
 ## Bugbot detection
@@ -19,7 +19,7 @@ Qoder's exact bugbot login and marker are unverified. Detection covers any host 
 
 ## Model setup
 
-Run `/setup-pstack` to write `~/.qoder/rules/pstack-models.md` and the model-pinning profiles under `~/.qoder/agents/`. Until you run it, roles use the documented auto fallback: `Explore` for read-only work and `poteto-agent` for write work. The fallback works. The pinned-model path stays inactive until setup runs.
+Run `/setup-pstack` to write `~/.qoder/rules/pstack-models.md` and the model-pinning profiles under `~/.qoder/agents/`. The rule carries a `# defaults: 2` line. A rule without that line is from an older setup. On the next run, old default values take the new defaults: a `Fast` value at any effort in `feature, refactoring`, `bug-fix`, `perf-issue`, `hillclimb`, `reflect tooling`, or `swarm workers`; an `Ultimate` value in `hardest tasks`; and a panel list that is exactly one `Ultimate` entry and one `Fast` entry. Every other value stays as the user's choice. A line whose role is not in the current shape, including the retired roles `how explorer`, `how explainer`, `why investigators`, and `why synthesizer`, is dropped. Until you run setup, roles use the documented auto fallback: `Explore` for read-only work and `poteto-agent` for write work. The fallback works. The pinned-model path stays inactive until setup runs.
 
 ## Out of scope
 

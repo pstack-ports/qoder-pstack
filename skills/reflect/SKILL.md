@@ -29,7 +29,7 @@ Each reviewer and the synthesizer name a role line in `~/.qoder/rules/pstack-mod
 | Lens | Role line | Default `model` | Prompt template |
 |---|---|---|---|
 | Judgment | `reflect judgment, divergent, synthesizer` | `Ultimate xhigh` | `references/judgment-reviewer.md` |
-| Tooling | `reflect tooling` | `Fast xhigh` | `references/tooling-reviewer.md` |
+| Tooling | `reflect tooling` | `Ultimate high` | `references/tooling-reviewer.md` |
 | Divergent | `reflect judgment, divergent, synthesizer` | `Ultimate xhigh` | `references/divergent-reviewer.md` |
 
 Pass each template verbatim, substituting the transcript path or digest where marked. Reviewers return findings in the `Agent` response body.

@@ -109,7 +109,7 @@ Close calls:
 Not in pstack:
 
 - `/loop` and `skill-creator` are Qoder built-ins.
-- `deslop`, `control-cli`, and `control-ui` are bundled verbatim from the upstream `cursor-team-kit` plugin.
+- `deslop`, `control-cli`, and `control-ui` are bundled.
 - pstack has no `/orchestrate` skill. Orchestrate is a `/poteto-mode` playbook. If the slash menu shows `/orchestrate`, another plugin provides it.
 
 ## Playbooks and principles

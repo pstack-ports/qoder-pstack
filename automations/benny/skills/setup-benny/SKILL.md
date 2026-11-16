@@ -35,7 +35,6 @@ Enable pstack with `qodercli plugins enable pstack`.
 
 Start a fresh agent rooted in the target project. Verify that these shared pstack skills resolve:
 
-- `how`
 - `why`
 - `tdd`
 - `unslop`
