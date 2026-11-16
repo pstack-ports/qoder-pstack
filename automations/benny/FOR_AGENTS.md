@@ -29,7 +29,7 @@ i want two automations that work together in one slack issue channel.
 - i treat utility and debug bots as evidence, not delegation or fix ownership.
 - i allow subagents to help, but they cannot post to slack or receive slack credentials.
 - i want this entire pack committed at `.agents/automations/benny/` in the target repository. its `SKILL.md` files are direct automation instructions, not registered plugin skills.
-- i want pstack enabled (`qodercli plugins enable pstack`) for shared dependencies such as `how`, `why`, `tdd`, `unslop`, and the required principle skills.
+- i want pstack enabled (`qodercli plugins enable pstack`) for shared dependencies such as `why`, `tdd`, `unslop`, and the required principle skills.
 - i want each live automation prompt to read its committed operational file directly. i do not want plugin cache paths, copied excerpts, or slash-skill discovery.
 - i keep user-owned configuration, feature maps, routing maps, and secrets outside `.agents/automations/benny/` so pack refreshes cannot overwrite them.
 - i want both automations to fail closed when channel coordinates, tracker access, the control adapter, or the feature map are missing or uncertain.
@@ -66,7 +66,7 @@ the human enters setup by pointing Qoder at this file. do not look for or invoke
 
 i want pstack enabled with `qodercli plugins enable pstack`.
 
-i want verification from a fresh agent rooted in the target repository. confirm that pstack's `how`, `why`, `tdd`, `unslop`, and the principle skills used by benny resolve.
+i want verification from a fresh agent rooted in the target repository. confirm that pstack's `why`, `tdd`, `unslop`, and the principle skills used by benny resolve.
 
 if any shared dependency does not resolve, stop and explain what failed. do not add `.agents/automations/benny/skills/` to a plugin manifest or expect its files to appear in the slash-skill list.
 
