@@ -25,7 +25,7 @@ Run:
 
 [`/setup-pstack`](../../skills/setup-pstack/SKILL.md) detects the models you have access to, asks for a reasoning budget, shows you each role (code delegates, judgment, the review panels), and asks what you want. Answer the questions. It writes `~/.qoder/rules/pstack-models.md`, a small rule every pstack skill reads, plus the model-pinning agent profiles the roles spawn.
 
-The defaults are the same as the `large` budget. Most roles run at `xhigh` reasoning. The hardest changes run at `max`, and the review panels and swarm workers run at `high`. `unlimited` raises each role one level, up to `max`. `medium` lowers each role one level and `small` lowers it two, and both spend fewer tokens.
+The defaults are the same as the `large` budget. Code, prose, and judgment run on Ultimate at `xhigh` reasoning, and the review panels and swarm workers run at `high`. No role runs above `xhigh`. The default panel is Ultimate and Fast. `medium` lowers each role one level and `small` lowers it two, and both spend fewer tokens.
 
 You only override what you care about. A role with no line in the rule keeps the skill's default. To restore a default, delete that role's line. A rerun of `/setup-pstack` keeps any role whose model differs from the default. When a default changes, a rule written before the change still pins the old default until you run `/setup-pstack` again. That run replaces the old defaults it recognizes, tells you which, and keeps your other choices. To drop a pin it does not recognize, delete that role's line or the file first.
 
@@ -60,7 +60,7 @@ Pick something real but small, and describe it the way you'd describe it to a co
 /poteto-mode add a --json flag to this command. text output stays byte-identical. verify both.
 ```
 
-Watch the todo list. Its first items are the matched playbook's steps copied in, the Feature playbook for this prompt. If `/poteto-mode` skips a step, the step stays in the list with `skip: <reason>`, so you can see what it chose not to do.
+Watch the todo list. Its first items are the matched playbook's steps copied in, the Feature playbook for this prompt.
 
 From here you can type normal follow-ups. `/poteto-mode` attaches the skill to one message, and it fades as the chat moves on, so start each new task with `/poteto-mode`.
 

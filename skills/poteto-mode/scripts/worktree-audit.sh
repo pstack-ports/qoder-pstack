@@ -69,9 +69,46 @@ elif raw=$(gh pr list --author "@me" --state all --limit 1000 \
 fi
 [ -s "$prs" ] || echo "[]" > "$prs"
 
-# Transcripts dir: ~/.qoder/projects/<slug>, where slug is the workspace path
-# with each "/" and "." turned into "-" (leading dash kept).
-slug=$(printf '%s' "$main_wt" | sed 's#[/.]#-#g')
+# Transcripts dir: ~/.qoder/projects/<slug>. Slug is qodercli Vf(cwd):
+# each UTF-16 code unit outside ASCII letters and digits becomes "-", and a
+# dashed form longer than 200 is the first 200 plus "-" plus a base-36 hash
+# of the original path (seed 5381, signed 32-bit t = 33 * t ^ charCode).
+slug=$(python3 -c '
+import sys
+def to_int32(n):
+    n = int(n) & 0xFFFFFFFF
+    if n >= 0x80000000:
+        n -= 0x100000000
+    return n
+def units_of(A):
+    units = []
+    for ch in A:
+        cp = ord(ch)
+        if cp <= 0xFFFF:
+            units.append(cp)
+        else:
+            cp -= 0x10000
+            units.append(0xD800 + (cp >> 10))
+            units.append(0xDC00 + (cp & 0x3FF))
+    return units
+def vf(A):
+    units = units_of(A)
+    e = "".join(chr(u) if (48 <= u <= 57 or 65 <= u <= 90 or 97 <= u <= 122) else "-" for u in units)
+    if len(e) <= 200:
+        return e
+    t = 5381
+    for u in units:
+        t = to_int32(to_int32(33 * t) ^ u)
+    abs_t = 2147483648 if t == -2147483648 else abs(t)
+    digits = "0123456789abcdefghijklmnopqrstuvwxyz"
+    s = ""
+    n = abs_t
+    while n:
+        n, r = divmod(n, 36)
+        s = digits[r] + s
+    return e[:200] + "-" + (s or "0")
+print(vf(sys.argv[1]), end="")
+' "$main_wt")
 transcripts="$HOME/.qoder/projects/$slug"
 now=$(date +%s)
 

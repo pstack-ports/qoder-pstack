@@ -26,7 +26,7 @@ Update mode changes the rest of the flow:
 
 ### 1. Mine their history
 
-Locate the active workspace's transcripts before fanning out. They live under `~/.qoder/projects/<slug>/`, where `<slug>` is the workspace path with each "/" and "." turned into "-". Use only that folder. Don't glob across `~/.qoder/projects/*/`. That crosses workspace boundaries and reads private chats from unrelated projects.
+Locate the active workspace's transcripts before fanning out. They live under `~/.qoder/projects/<slug>/`, where `<slug>` is the workspace path with every UTF-16 code unit outside ASCII letters and digits replaced by `-` (so `/home/me/my_proj` becomes `-home-me-my-proj`). When that dashed form is longer than 200 characters, keep the first 200, then `-`, then the base-36 form of `Math.abs(t)`, where `t` starts at `5381` and each UTF-16 code unit of the original path updates it with `t = 33 * t ^ charCodeAt(i)` in signed 32-bit (`Math.abs(-2147483648)` is `2147483648`). Use only that folder. Don't glob across `~/.qoder/projects/*/`. That crosses workspace boundaries and reads private chats from unrelated projects.
 
 Survey recent agent conversations within that scope for recurring patterns. Run multiple parallel subagents across slices of history (e.g. last 2-4 weeks, split into 3 slices so each has enough material). Pick each subagent's reasoning effort for the job, per the Subagents section of the **poteto-mode** skill. Each slice mining subagent reads transcripts from the workspace-scoped path the parent provides, looks for the signals below, and returns a short structured list of patterns it saw with evidence pointers. Default signals worth hunting:
 
