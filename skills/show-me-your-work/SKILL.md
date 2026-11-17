@@ -54,7 +54,7 @@ Commit it only when the work is ambitious enough that a reviewer needs the trail
 
 ## Audit the log against the transcript
 
-At the end of the run, before handing back, check the log told the truth. Read this run's transcript under `~/.qoder/projects/<slug>/`, where `<slug>` is the workspace path with each "/" and "." turned into "-". Don't glob across `~/.qoder/projects/*/`. That reads unrelated private chats. Walk this run's rows against what actually happened. Each stretch of them begins at one of this run's `start` rows, or at the first row if this run created the log, and ends at the next `start` row of another run:
+At the end of the run, before handing back, check the log told the truth. Read this run's transcript under `~/.qoder/projects/<slug>/`, where `<slug>` is the workspace path with every UTF-16 code unit outside ASCII letters and digits replaced by `-` (so `/home/me/my_proj` becomes `-home-me-my-proj`). When that dashed form is longer than 200 characters, keep the first 200, then `-`, then the base-36 form of `Math.abs(t)`, where `t` starts at `5381` and each UTF-16 code unit of the original path updates it with `t = 33 * t ^ charCodeAt(i)` in signed 32-bit (`Math.abs(-2147483648)` is `2147483648`). Don't glob across `~/.qoder/projects/*/`. That reads unrelated private chats. Walk this run's rows against what actually happened. Each stretch of them begins at one of this run's `start` rows, or at the first row if this run created the log, and ends at the next `start` row of another run:
 
 - Check that every row maps to a real decision or action.
 - Check that each row's evidence resolves and shows what the row claims.
