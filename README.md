@@ -1,8 +1,8 @@
 # pstack
 
-Qoder port of [pstack](https://github.com/cursor/plugins/tree/2f87c854fe3e2fcda44ca86b46ede35aad3c46b7/pstack) (`0.15.43`) by [Lauren Tan (poteto)](https://x.com/poteto).
+Qoder port of [pstack](https://github.com/cursor/plugins/tree/0b46ec399d55f2829e88822998f53b84944837d3/pstack) (`0.15.46`) by [Lauren Tan (poteto)](https://x.com/poteto).
 
-See the [upstream pstack README](https://github.com/cursor/plugins/blob/2f87c854fe3e2fcda44ca86b46ede35aad3c46b7/pstack/README.md) and the [guide](./docs/guide/README.md) for usage and documentation.
+See the [upstream pstack README](https://github.com/cursor/plugins/blob/0b46ec399d55f2829e88822998f53b84944837d3/pstack/README.md) and the [guide](./docs/guide/README.md) for usage and documentation.
 
 i'm [poteto](https://x.com/poteto). i'm not a president or ceo, but i've worked with millions of lines of code at Meta, Netflix, and Cursor. i'm also on the react core team where i help build and maintain react compiler.
 
